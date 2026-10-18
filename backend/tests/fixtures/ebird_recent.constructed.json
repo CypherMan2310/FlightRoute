@@ -1,0 +1,8 @@
+[
+  {"speciesCode": "cangoo", "comName": "Canada Goose", "sciName": "Branta canadensis", "locId": "L100", "locName": "Jamaica Bay", "obsDt": "2026-10-15 08:10", "howMany": 120, "lat": 40.62, "lng": -73.83, "obsValid": true, "obsReviewed": false, "locationPrivate": false, "subId": "S100"},
+  {"speciesCode": "cangoo", "comName": "Canada Goose", "sciName": "Branta canadensis", "locId": "L101", "locName": "Floyd Bennett Field", "obsDt": "2026-10-16 07:45", "howMany": 80, "lat": 40.59, "lng": -73.89, "obsValid": true, "obsReviewed": false, "locationPrivate": false, "subId": "S101"},
+  {"speciesCode": "hergul", "comName": "Herring Gull", "sciName": "Larus argentatus", "locId": "L100", "locName": "Jamaica Bay", "obsDt": "2026-10-15 08:10", "howMany": 35, "lat": 40.62, "lng": -73.83, "obsValid": true, "obsReviewed": false, "locationPrivate": false, "subId": "S100"},
+  {"speciesCode": "osprey", "comName": "Osprey", "sciName": "Pandion haliaetus", "locId": "L102", "locName": "Breezy Point", "obsDt": "2026-10-14 10:30", "howMany": 2, "lat": 40.55, "lng": -73.93, "obsValid": true, "obsReviewed": true, "locationPrivate": false, "subId": "S102"},
+  {"speciesCode": "amerob", "comName": "American Robin", "sciName": "Turdus migratorius", "locId": "L103", "locName": "Prospect Park", "obsDt": "2026-10-16 09:00", "obsValid": true, "obsReviewed": false, "locationPrivate": false, "subId": "S103"},
+  {"speciesCode": "hergul", "comName": "Herring Gull", "sciName": "Larus argentatus", "locId": "L102", "locName": "Breezy Point", "obsDt": "2026-10-14 10:30", "howMany": 15, "lat": 40.55, "lng": -73.93, "obsValid": true, "obsReviewed": true, "locationPrivate": false, "subId": "S102"}
+]

@@ -1,0 +1,699 @@
+{
+  "status": "trained",
+  "trained_on": "real",
+  "created_at": "2026-10-17T10:03:22+00:00",
+  "note": "REAL: BTS On-Time Performance (US domestic, seed airports only) + IEM ASOS observations + Open-Meteo historical forecast.",
+  "source_meta": {
+    "trained_on": "real",
+    "months": [
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07"
+    ],
+    "window": [
+      "2026-04-01",
+      "2026-08-01"
+    ],
+    "note": "REAL: BTS On-Time Performance (US domestic, seed airports only) + IEM ASOS observations + Open-Meteo historical forecast.",
+    "n_flights": 1165878,
+    "obs_missing_frac": 0.07280282331511845,
+    "fc_missing_frac": 0.0,
+    "limitations": [
+      "US airports of the seed list only",
+      "cancelled and diverted flights excluded",
+      "BTS NAS delay includes non-extreme weather",
+      "cause minutes exist only when ArrDel15 = 1",
+      "local time approximated by solar time in features"
+    ]
+  },
+  "split": {
+    "train_end": 1783434240.0,
+    "calib_start": 1783645056.0,
+    "calib_end": 1784488320.0,
+    "test_start": 1784699136.0,
+    "start": 1775001600.0,
+    "end": 1785542400.0
+  },
+  "split_dates": {
+    "start": "2026-04-01",
+    "train_end": "2026-07-07",
+    "calib": [
+      "2026-07-10",
+      "2026-07-19"
+    ],
+    "test_start": "2026-07-22",
+    "end": "2026-07-31"
+  },
+  "counts": {
+    "nodes": 42,
+    "train_flights": 930753,
+    "calib_flights": 92747,
+    "test_flights": 94968,
+    "train_airport_hours": 98406,
+    "test_airport_hours": 7544
+  },
+  "inference_graph": "world graph from data.routes_graph() (origin 'derived' until OpenFlights/BTS edges are loaded); weights have no node-id features",
+  "models": {
+    "gcn": {
+      "kind": "ml",
+      "trained_on": "real",
+      "created_at": "2026-10-17T10:03:22+00:00",
+      "name": "2-layer GCN (numpy), heads: mean departure delay, late-aircraft delay",
+      "hidden": 32,
+      "features": 28,
+      "metrics": {
+        "y_dep": {
+          "n": 7544,
+          "mae": 16.23718674117334,
+          "rmse": 33.0305245655022,
+          "f1_gt15": 0.7457070983265887,
+          "mae_weighted": 13.635603156308543,
+          "rmse_weighted": 25.31929227133638,
+          "mae_ci95": [
+            13.768032002305505,
+            18.983853503389966
+          ]
+        },
+        "y_late": {
+          "n": 7544,
+          "mae": 8.394685843537646,
+          "rmse": 18.0464025347559,
+          "f1_gt15": 0.2361308677098151,
+          "mae_weighted": 7.221459106495636,
+          "rmse_weighted": 14.398981348740767,
+          "mae_ci95": [
+            7.393324363567479,
+            9.39040037510606
+          ]
+        }
+      },
+      "baselines": {
+        "y_dep": {
+          "hist_mean": {
+            "n": 7544,
+            "mae": 16.700492585515544,
+            "rmse": 34.55233837650217,
+            "f1_gt15": 0.7081819320887107,
+            "mae_weighted": 14.005075247145099,
+            "rmse_weighted": 26.546244982372976,
+            "mae_ci95": [
+              13.918562642785012,
+              19.95972220658831
+            ]
+          },
+          "lgbm_no_graph": {
+            "n": 7544,
+            "mae": 16.91369106425631,
+            "rmse": 32.832993943985315,
+            "f1_gt15": 0.7423541361020201,
+            "mae_weighted": 14.414765498136598,
+            "rmse_weighted": 25.267229107915725,
+            "mae_ci95": [
+              14.641119565649122,
+              19.394984053577108
+            ]
+          }
+        },
+        "y_late": {
+          "hist_mean": {
+            "n": 7544,
+            "mae": 8.421045021531079,
+            "rmse": 19.000136507937132,
+            "f1_gt15": 0.3065198983911939,
+            "mae_weighted": 7.14842982887721,
+            "rmse_weighted": 14.913184179136111,
+            "mae_ci95": [
+              7.336512927862789,
+              9.526243205865198
+            ]
+          },
+          "lgbm_no_graph": {
+            "n": 7544,
+            "mae": 8.6691618310129,
+            "rmse": 17.800098278771877,
+            "f1_gt15": 0.3379721669980119,
+            "mae_weighted": 7.429406099627659,
+            "rmse_weighted": 14.211571634379077,
+            "mae_ci95": [
+              7.725901054769637,
+              9.595954353478197
+            ]
+          }
+        }
+      },
+      "vs_baseline": {
+        "y_dep": {
+          "hist_mean": {
+            "rmse_ratio": 0.9559562714853792,
+            "ci95": [
+              0.9373589059660694,
+              0.9745827626721644
+            ],
+            "better": true,
+            "n_days": 10
+          },
+          "lgbm_no_graph": {
+            "rmse_ratio": 1.0060162232495116,
+            "ci95": [
+              0.9777849290115408,
+              1.0194615509359715
+            ],
+            "better": false,
+            "n_days": 10
+          }
+        },
+        "y_late": {
+          "hist_mean": {
+            "rmse_ratio": 0.9498038357365051,
+            "ci95": [
+              0.9151106245323594,
+              0.9727554654859581
+            ],
+            "better": true,
+            "n_days": 10
+          },
+          "lgbm_no_graph": {
+            "rmse_ratio": 1.0138372413526364,
+            "ci95": [
+              1.00059139690748,
+              1.0232614693306128
+            ],
+            "better": false,
+            "n_days": 10
+          }
+        }
+      },
+      "graph_helps": false,
+      "graph_helps_rule": "departure-delay RMSE ratio vs the same features without the graph, whole 95% paired block-bootstrap interval below 1"
+    },
+    "congestion": {
+      "kind": "ml",
+      "trained_on": "real",
+      "created_at": "2026-10-17T10:03:22+00:00",
+      "name": "LightGBM airport-hour NAS-type delay -> stress index",
+      "metrics": {
+        "n": 7544,
+        "mae": 5.089306280093438,
+        "rmse": 10.64129350169126,
+        "f1_gt15": 0.05237315875613748,
+        "mae_weighted": 4.723339624369396,
+        "rmse_weighted": 9.140700331460453,
+        "mae_ci95": [
+          3.9144189078236424,
+          6.463155087402521
+        ]
+      },
+      "baselines": {
+        "hist_mean": {
+          "n": 7544,
+          "mae": 4.683850265475246,
+          "rmse": 10.921798719265166,
+          "f1_gt15": 0.03005008347245409,
+          "mae_weighted": 4.458996336345811,
+          "rmse_weighted": 9.324684936291115,
+          "mae_ci95": [
+            3.434930445729303,
+            6.196494474618285
+          ]
+        },
+        "lgbm_no_hist_prior": {
+          "n": 7544,
+          "mae": 5.175588618639948,
+          "rmse": 10.826382041638219,
+          "f1_gt15": 0.00718132854578097,
+          "mae_weighted": 4.791059837192975,
+          "rmse_weighted": 9.307089380426875,
+          "mae_ci95": [
+            3.987638437759714,
+            6.570859660381325
+          ]
+        }
+      },
+      "vs_baseline": {
+        "hist_mean": {
+          "rmse_ratio": 0.9743169394726974,
+          "ci95": [
+            0.9562458748390269,
+            0.9976161777977798
+          ],
+          "better": true,
+          "n_days": 10
+        },
+        "lgbm_no_hist_prior": {
+          "rmse_ratio": 0.9829039341827114,
+          "ci95": [
+            0.9748316444174333,
+            1.0041454152983673
+          ],
+          "better": false,
+          "n_days": 10
+        }
+      },
+      "oof": {
+        "n": 59618,
+        "metrics": {
+          "n": 59618,
+          "mae": 4.017689307922581,
+          "rmse": 9.282639021268027,
+          "f1_gt15": 0.0239221140472879,
+          "mae_weighted": 3.8046047302343906,
+          "rmse_weighted": 7.502106795823987,
+          "mae_ci95": [
+            3.72372946786151,
+            4.370438925361583
+          ]
+        },
+        "baselines": {
+          "hist_mean": {
+            "n": 59618,
+            "mae": 4.130880426270977,
+            "rmse": 9.787959293331213,
+            "f1_gt15": 0.03308197518851861,
+            "mae_weighted": 3.9404155923315356,
+            "rmse_weighted": 7.855226876504586,
+            "mae_ci95": [
+              3.8454801364311555,
+              4.495050600436034
+            ]
+          },
+          "lgbm_no_hist_prior": {
+            "n": 59618,
+            "mae": 4.016656278838664,
+            "rmse": 9.327486444046976,
+            "f1_gt15": 0.005147269087789534,
+            "mae_weighted": 3.7958934684114958,
+            "rmse_weighted": 7.541118305734583,
+            "mae_ci95": [
+              3.700268720709651,
+              4.384874442650259
+            ]
+          }
+        },
+        "vs_baseline": {
+          "hist_mean": {
+            "rmse_ratio": 0.948373276091629,
+            "ci95": [
+              0.9233057229153543,
+              0.9644142919509184
+            ],
+            "better": true,
+            "n_days": 79
+          },
+          "lgbm_no_hist_prior": {
+            "rmse_ratio": 0.9951919069464236,
+            "ci95": [
+              0.9918456769361551,
+              0.9995237072461599
+            ],
+            "better": true,
+            "n_days": 79
+          }
+        }
+      },
+      "hist_prior": {
+        "targets": [
+          "y_nas",
+          "y_dep",
+          "y_late"
+        ],
+        "shrink": 60.0,
+        "airports": 42,
+        "note": "train-only mean by airport and airport x hour-of-week; leave-one-week-out inside the fit window"
+      }
+    },
+    "weather": {
+      "kind": "ml",
+      "trained_on": "real",
+      "created_at": "2026-10-17T10:03:22+00:00",
+      "name": "LightGBM flight-level weather delay",
+      "metrics": {
+        "n": 94968,
+        "mae": 1.6893600656457346,
+        "rmse": 14.2459659333685,
+        "f1_gt15": 0.039473684210526314,
+        "mae_ci95": [
+          1.278576838826799,
+          2.1940351046670448
+        ]
+      },
+      "baselines": {
+        "mean": {
+          "n": 94968,
+          "mae": 1.4616428025768795,
+          "rmse": 14.270941402709726,
+          "f1_gt15": 0.0,
+          "mae_ci95": [
+            1.1187817855105273,
+            1.9142107254244964
+          ]
+        },
+        "origin_mean": {
+          "n": 94968,
+          "mae": 1.4558568705225663,
+          "rmse": 14.274962534856655,
+          "f1_gt15": 0.0,
+          "mae_ci95": [
+            1.1162137856985306,
+            1.902332951365855
+          ]
+        }
+      },
+      "vs_baseline": {
+        "mean": {
+          "rmse_ratio": 0.9982499073722259,
+          "ci95": [
+            0.9962636301748943,
+            1.005860436211174
+          ],
+          "better": false,
+          "n_days": 10
+        },
+        "origin_mean": {
+          "rmse_ratio": 0.9979687091004674,
+          "ci95": [
+            0.9963974878869345,
+            1.0036476606511515
+          ],
+          "better": false,
+          "n_days": 10
+        }
+      },
+      "oof": {
+        "n": 745197,
+        "metrics": {
+          "n": 745197,
+          "mae": 1.4566607803413665,
+          "rmse": 14.714810728089223,
+          "f1_gt15": 0.008133180836192655,
+          "mae_ci95": [
+            1.2660680936879356,
+            1.6761337695661478
+          ]
+        },
+        "baselines": {
+          "mean": {
+            "n": 745197,
+            "mae": 1.372225736390316,
+            "rmse": 14.727838717596944,
+            "f1_gt15": 0.0,
+            "mae_ci95": [
+              1.1981670826819708,
+              1.5749407428845954
+            ]
+          },
+          "origin_mean": {
+            "n": 745197,
+            "mae": 1.3665706287023394,
+            "rmse": 14.722533353601277,
+            "f1_gt15": 0.0,
+            "mae_ci95": [
+              1.193984589791206,
+              1.5665735325580494
+            ]
+          }
+        },
+        "vs_baseline": {
+          "mean": {
+            "rmse_ratio": 0.9991154174242772,
+            "ci95": [
+              0.9979356791348158,
+              1.0007488499961685
+            ],
+            "better": false,
+            "n_days": 79
+          },
+          "origin_mean": {
+            "rmse_ratio": 0.9994754553902777,
+            "ci95": [
+              0.9984233694907547,
+              1.000933025232296
+            ],
+            "better": false,
+            "n_days": 79
+          }
+        }
+      }
+    },
+    "routing": {
+      "kind": "algorithmic",
+      "trained_on": "n/a",
+      "name": "great-circle + range-aware stops + jet-wind time",
+      "label": "algorithmic (not ML)"
+    },
+    "bird": {
+      "kind": "prior",
+      "trained_on": "n/a",
+      "name": "ecology prior (season, local solar time, latitude, flyway), optional eBird blend",
+      "label": "prior-based estimate"
+    },
+    "carrier": {
+      "kind": "lookup",
+      "trained_on": "real",
+      "created_at": "2026-10-17T10:03:22+00:00",
+      "name": "mean carrier+security delay by airline x origin x month",
+      "metrics": {
+        "n": 94968,
+        "mae": 11.281568922150308,
+        "rmse": 40.950310230763726,
+        "f1_gt15": 0.03494673892730331,
+        "mae_ci95": [
+          10.640818811484623,
+          12.053554136789154
+        ]
+      },
+      "baselines": {
+        "global_mean": {
+          "n": 94968,
+          "mae": 10.424437109179406,
+          "rmse": 40.96760530937798,
+          "f1_gt15": 0.0,
+          "mae_ci95": [
+            9.748246321964881,
+            11.253221973676183
+          ]
+        }
+      },
+      "vs_baseline": {
+        "global_mean": {
+          "rmse_ratio": 0.9995778352558308,
+          "ci95": [
+            0.9979935627680271,
+            1.000842024738566
+          ],
+          "better": false,
+          "n_days": 10
+        }
+      },
+      "oof": {
+        "n": 745197,
+        "metrics": {
+          "n": 745197,
+          "mae": 8.667737260375084,
+          "rmse": 34.12871792634299,
+          "f1_gt15": 0.006044538706256628,
+          "mae_ci95": [
+            8.357574952312843,
+            8.989349900041455
+          ]
+        },
+        "baselines": {
+          "global_mean": {
+            "n": 745197,
+            "mae": 8.59269040222564,
+            "rmse": 34.14262339137853,
+            "f1_gt15": 0.0,
+            "mae_ci95": [
+              8.30842913038564,
+              8.89255403042452
+            ]
+          }
+        },
+        "vs_baseline": {
+          "global_mean": {
+            "rmse_ratio": 0.9995927241771658,
+            "ci95": [
+              0.9992417770171721,
+              0.9999296174109817
+            ],
+            "better": true,
+            "n_days": 79
+          }
+        }
+      }
+    },
+    "ensemble": {
+      "kind": "stacked",
+      "trained_on": "real",
+      "created_at": "2026-10-17T10:03:22+00:00",
+      "name": "non-negative linear stacker per weather zone + split-conformal 80% intervals",
+      "metrics": {
+        "n": 94968,
+        "mae": 31.926863502634344,
+        "rmse": 64.13740192214478,
+        "f1_arr15": 0.47705958803564247,
+        "mae_ci95": [
+          29.681718673814608,
+          34.71517240596108
+        ]
+      },
+      "baselines": {
+        "hist_mean": {
+          "n": 94968,
+          "mae": 32.97195660681842,
+          "rmse": 72.58713739486853,
+          "f1_arr15": 0.4550072760947215,
+          "mae_ci95": [
+            29.502204688622548,
+            37.55797245156794
+          ]
+        },
+        "lgbm_direct": {
+          "n": 94968,
+          "mae": 28.108833713958777,
+          "rmse": 63.7930513131863,
+          "f1_arr15": 0.4988136907138998,
+          "mae_ci95": [
+            25.76278654009172,
+            30.990249982083057
+          ]
+        }
+      },
+      "vs_baseline": {
+        "hist_mean": {
+          "rmse_ratio": 0.8835918349175587,
+          "ci95": [
+            0.8329577832506873,
+            0.925510739481996
+          ],
+          "better": true,
+          "n_days": 10
+        },
+        "lgbm_direct": {
+          "rmse_ratio": 1.0053979328762295,
+          "ci95": [
+            0.9978747362841345,
+            1.0139817870718277
+          ],
+          "better": false,
+          "n_days": 10
+        }
+      },
+      "horizons": {
+        "2": {
+          "n": 31901,
+          "mae": 32.55194000891968
+        },
+        "6": {
+          "n": 27497,
+          "mae": 30.291224365905265
+        },
+        "24": {
+          "n": 35570,
+          "mae": 32.63067580838726
+        }
+      },
+      "per_zone": {
+        "subpolar": "insufficient data",
+        "subtropical": {
+          "n": 36852,
+          "mae": 30.980076733471638,
+          "rmse": 59.134384960102594,
+          "f1_arr15": 0.48695652173913045
+        },
+        "temperate": {
+          "n": 55941,
+          "mae": 32.81689889275452,
+          "rmse": 67.19676727944749,
+          "f1_arr15": 0.4718010151004067
+        },
+        "tropical": {
+          "n": 1591,
+          "mae": 26.545381039659922,
+          "rmse": 72.54050764511346,
+          "f1_arr15": 0.45772843723313406
+        }
+      },
+      "conformal": {
+        "target": 0.8,
+        "n_cal": 92747,
+        "test_n": 94968,
+        "test_coverage": 0.8035759413697245,
+        "test_coverage_by_month": [
+          {
+            "month": "2026-07",
+            "n": 94968,
+            "coverage": 0.8035759413697245
+          }
+        ],
+        "mean_width_min": 67.15924879259394
+      },
+      "weights_pooled": {
+        "weights": {
+          "weather": 1.524371416199716,
+          "congestion": 1.5494333004769152,
+          "cascade": 1.469764200780744,
+          "route": 0.10317784008689769,
+          "bird": 0.0,
+          "carrier": 0.9099301003829646
+        },
+        "baseline": 1.2021085821991595,
+        "n": 745197
+      },
+      "weights_by_zone": {
+        "subpolar": {
+          "weights": {
+            "weather": 0.0,
+            "congestion": 2.798330411148194,
+            "cascade": 0.3529604754473891,
+            "route": 0.0,
+            "bird": 0.5394558478926049,
+            "carrier": 1.9486645609757638
+          },
+          "baseline": 0.0,
+          "n": 3570,
+          "pooled": false
+        },
+        "subtropical": {
+          "weights": {
+            "weather": 1.508473395100374,
+            "congestion": 1.1627555484687857,
+            "cascade": 1.523926563280515,
+            "route": 0.015425407621306486,
+            "bird": 0.0,
+            "carrier": 0.86968695697258
+          },
+          "baseline": 2.4718547144275105,
+          "n": 289495,
+          "pooled": false
+        },
+        "temperate": {
+          "weights": {
+            "weather": 1.5582314176429748,
+            "congestion": 1.6859339053453344,
+            "cascade": 1.5129395538491475,
+            "route": 0.12799797561369297,
+            "bird": 0.0,
+            "carrier": 0.9322325814350888
+          },
+          "baseline": 0.565947724569556,
+          "n": 440263,
+          "pooled": false
+        },
+        "tropical": {
+          "weights": {
+            "weather": 1.2897429274593526,
+            "congestion": 0.0,
+            "cascade": 0.588327030655458,
+            "route": 0.09044752469469185,
+            "bird": 0.0,
+            "carrier": 0.9624464849990536
+          },
+          "baseline": 5.4555918597529995,
+          "n": 11869,
+          "pooled": false
+        }
+      }
+    }
+  }
+}

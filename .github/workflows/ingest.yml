@@ -1,0 +1,29 @@
+name: ingest
+# Keeps the deployed app awake and archives its live scorecard.
+# Free hosts sleep when idle, and the scorecard only accumulates while the app runs (an in-process job logs a prediction for
+# every US airport each hour and resolves it against live FAA NAS data). This job pings the app every 30 minutes and stores
+# the scorecard JSON as an artifact so the accuracy history survives restarts. It does nothing until the repository
+# variable AEROGRID_URL (for example https://your-space.hf.space) is set.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    if: ${{ vars.AEROGRID_URL != '' }}
+    steps:
+      - name: Ping (wakes a sleeping host; /api/health never calls an upstream)
+        run: curl -fsS --retry 5 --retry-delay 20 --max-time 60 "${{ vars.AEROGRID_URL }}/api/health" | tee health.json
+      - name: Snapshot the scorecard and the model card
+        run: |
+          curl -fsS --max-time 60 "${{ vars.AEROGRID_URL }}/api/scorecard" -o scorecard.json
+          curl -fsS --max-time 60 "${{ vars.AEROGRID_URL }}/api/models" -o models.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-${{ github.run_id }}
+          path: |
+            health.json
+            scorecard.json
+            models.json
+          retention-days: 90

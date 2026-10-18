@@ -1,0 +1,31 @@
+# WORK log
+
+- 2026-10-17 P0: CLAUDE.md saved from master prompt Section 1.
+- 2026-10-17 P0: backend/aerogrid tree per 1.5 with docstring stubs (data, sources, ml, train, api).
+- 2026-10-17 P0: backend/requirements.txt, backend/pytest.ini, Makefile (test/run/build/train), .gitignore.
+- 2026-10-17 P0: backend/data/airports_seed.csv, 155 airports (25 tier-1, 77 tier-2, 53 tier-3), 6 coordinates marked `?`.
+- 2026-10-17 P0: backend/tests/test_seed.py (module imports, CSV schema, unique codes, value ranges): 3 passed.
+- 2026-10-17 P0: frontend placeholder Vite 6 shell; `npm run build` passes.
+- 2026-10-17 P0: placeholders for Dockerfile, train.yml, ingest.yml; minimal ci.yml; model_card.json `status: untrained`.
+- 2026-10-17 P1: re-checked upstream terms (OpenSky, adsb.lol, airplanes.live, aviationweather.gov, Open-Meteo, FAA NAS, eBird); table in TODO.md.
+- 2026-10-17 P1: seed cross-checked against OurAirports (0 rows drift > 0.05 deg); the 6 `?` rows resolved, LAS/IST/PKX/KMG coordinates updated, notes cleared.
+- 2026-10-17 P1: data.py: Airport loader, great_circle_km/point, initial_bearing, weather_zone (5 zones), derived routes graph (origin "derived").
+- 2026-10-17 P1: sources/cache.py: TTLCache, 8 s http helpers, fetch_one/batch_fetch (live -> cached -> stale -> simulated), error codes, `fallback_reason`.
+- 2026-10-17 P1: sources/simulate.py: deterministic simulators for flights, METAR, TAF, forecast, NAS, eBird (all `source: simulated`).
+- 2026-10-17 P1: connectors adsb (15 s, adsb.lol, OpenSky opt-in), metar+taf (10 min), openmeteo (30 min), nas (2 min), ebird (24 h).
+- 2026-10-17 P1: 141 offline tests with recorded/constructed fixtures (tests/fixtures/README.md); network blocked in conftest; `python -m pytest` 141 passed, `npm run build` passes.
+- 2026-10-17 P1: live smoke run (not a test): adsb.lol, METAR, TAF, Open-Meteo, NAS returned `source: live`; eBird simulated (no key).
+- 2026-10-17 P1: decision recorded: ADS-B stays on adsb.lol only, OpenSky opt-in and off by default (no code change needed).
+- 2026-10-17 P2: design doc docs/phase2-design.md (train/serve parity, datasets, time split, GCN math + grad check, targets, metrics, 6 decisions).
+- 2026-10-17 P2: ml/gcn.py (numpy GCN, gradient check < 1e-6, Adam, early stopping, npz export), ml/weather.py (canonical features, LightGBM wrapper), ml/congestion.py (schedule profile, stress index), ml/bird.py (prior), ml/routing.py (range-aware stops, vectorised wind time).
+- 2026-10-17 P2: train/synth.py (SYNTHETIC, BTS cause conventions), train/real.py (BTS + IEM ASOS + Open-Meteo history, resumable, local time to UTC), train/train_all.py (time blocks, OOF stacking, baselines, block-bootstrap CIs, model cards).
+- 2026-10-17 P2: real run on 4 months, 42 airports, 1.17 M flights, committed to backend/models (reduced run; numbers in TODO.md). Running it found and fixed: carrier shrinkage, LightGBM early stopping, unseen-feature blow-up in the GCN.
+- 2026-10-17 P3: ml/ensemble.py (carrier lookup, NNLS stacker per zone, Bundle), ml/conformal.py, ml/explain.py, ml/whatif.py.
+- 2026-10-17 P4: api/main.py (10 endpoints incl. SSE), api/scorecard.py (SQLite, resolves only against live FAA data), api/schemas.py; negative caching for stations without a METAR; Open-Meteo daily budget guard.
+- 2026-10-17 P5: frontend: 6 pages, black-and-white design system, globe.gl, PWA (manifest, icons, service worker); checked in the browser.
+- 2026-10-17 P6: Dockerfile, .dockerignore, ci.yml (+ docker job), train.yml (weekly, resumable), ingest.yml (keep-alive + scorecard archive), Makefile targets; runtime-only venv check.
+- 2026-10-17 P2-6: about 320 backend tests pass offline, `npm run build` passes; Docker build not run.
+- 2026-10-17 P2: improvement round 1 rules written before test (docs/phase2-design.md section 8): headline RMSE, paired block-bootstrap ratio, variants chosen on train OOF only, test read once.
+- 2026-10-17 P2: ml/congestion.py HistPrior (out-of-fold airport-hour historical mean, shrinkage chain, tier fallback, hist.json) feeding the congestion LightGBM; GCN_FEATURES keeps the GCN and its no-graph baseline on the old features (the prior hurt them). Bundle, explain labels, API and 6 new tests updated.
+- 2026-10-17 P2: train_all.py: per-fold prior refit, `vs_baseline` paired RMSE ratios, extra baselines (origin_mean, lgbm_no_hist_prior), `oof` evidence for congestion/weather/carrier, `graph_helps` now follows the RMSE rule; Models page shows the ratios.
+- 2026-10-17 P2: tried and not adopted (below the 0.3% bar): weather hurdle/Tweedie/regularised L2/airport prior, carrier shrinkage and month level; bird weight 0 verified as genuine. Bundle in backend/models retrained from the cached 4-month data (same window).

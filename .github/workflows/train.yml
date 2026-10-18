@@ -1,0 +1,74 @@
+name: train
+# Weekly training on REAL data: BTS On-Time Performance + IEM ASOS + Open-Meteo historical forecast (all free, no card).
+# Downloads are slow and rate-limited, so they are cached between runs and the job is resumable: if Open-Meteo answers 429,
+# the chunks fetched so far are saved and the next run continues. Memory: a 4-month, 42-airport run peaks at roughly 3-4 GB;
+# the full 30 months needs a runner with 16 GB (public repositories get one), so lower `months` on a private repository.
+on:
+  schedule:
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+    inputs:
+      months:
+        description: "Latest complete BTS months to train on (design: 30; needs about 16 GB RAM)"
+        default: "30"
+      commit:
+        description: "Commit the trained artifacts to backend/models"
+        type: boolean
+        default: true
+permissions:
+  contents: write
+concurrency:
+  group: train
+  cancel-in-progress: false
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r backend/requirements.txt
+      - name: Restore downloads (BTS zips, Open-Meteo chunks)
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .work
+          key: train-downloads-${{ github.run_id }}
+          restore-keys: train-downloads-
+      - name: Train on real data
+        run: >
+          cd backend && python -m aerogrid.train.train_all --source real
+          --months "${{ github.event.inputs.months || '30' }}"
+          --work ../.work --out ../trained-models --threads 4
+      - name: Save downloads for the next run
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .work
+          key: train-downloads-${{ github.run_id }}
+      - name: The card must say trained_on=real
+        run: |
+          python - <<'PY'
+          import json
+          c = json.load(open("trained-models/model_card.json"))
+          assert c["trained_on"] == "real" and c["status"] == "trained", c.get("trained_on")
+          e = c["models"]["ensemble"]
+          print("trained_on", c["trained_on"], "| window", c["split_dates"]["start"], "->", c["split_dates"]["end"], "| test n", e["metrics"]["n"], "| MAE", round(e["metrics"]["mae"], 2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: models
+          path: trained-models
+          retention-days: 90
+      - name: Commit the artifacts and the model card
+        if: github.event_name == 'schedule' || github.event.inputs.commit == 'true'
+        run: |
+          rm -rf backend/models && cp -r trained-models backend/models
+          git config user.name "aerogrid-train[bot]"
+          git config user.email "actions@users.noreply.github.com"
+          git add backend/models
+          if git diff --cached --quiet; then echo "no change"; else git commit -m "train: weekly real-data models [skip ci]" && git push; fi

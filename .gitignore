@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+node_modules/
+frontend/dist/
+backend/data/raw/
+*.sqlite
+*.db
+.work/
+backend/state/
