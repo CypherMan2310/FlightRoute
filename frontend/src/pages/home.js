@@ -1,6 +1,6 @@
 // Home: spinning black-and-white globe with live aircraft telemetry and airport stress.
 import { api, openStream } from '../api.js';
-import { h, clear, badge, trainedBadge, stressBar, fmt, ago, errorBox, loading, put } from '../ui.js';
+import { h, clear, badge, trainedBadge, stressBar, trafficLegend, fmt, ago, errorBox, loading, put } from '../ui.js';
 
 export default async function mount(root) {
   const stage = h('div', { class: 'globe-stage' });
@@ -54,9 +54,7 @@ export default async function mount(root) {
         h('h2', null, 'Most stressed now'),
         h('div', { class: 'mini', style: { margin: '8px 0 12px' } }, top.flatMap((a) => [
           h('a', { href: '#/', onclick: (e) => { e.preventDefault(); select(a); }, class: 'mono' }, `${a.iata} ${fmt(a.stress)}`), stressBar(a.stress)])),
-        h('div', { class: 'legend' },
-          h('span', null, h('i', { class: 'sev h0' }), 'calm'), h('span', null, h('i', { class: 'sev h2' }), 'busy'), h('span', null, h('i', { class: 'sev h4' }), 'severe'),
-          h('span', null, 'size and height = stress')),
+        trafficLegend(),
       );
     }
     if (flights) {

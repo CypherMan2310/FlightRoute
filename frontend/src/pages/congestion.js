@@ -1,6 +1,6 @@
 // Congestion: live ranked airports with a 0-100 stress index (hatch density = severity).
 import { api } from '../api.js';
-import { h, clear, badge, trainedBadge, sourcesPanel, stressBar, level, fmt, errorBox, loading, put } from '../ui.js';
+import { h, clear, badge, trainedBadge, sourcesPanel, stressBar, trafficLegend, fmt, errorBox, loading, put } from '../ui.js';
 
 export default async function mount(root) {
   let payload = null;
@@ -10,8 +10,9 @@ export default async function mount(root) {
   const body = h('div', null, loading('loading airports'));
   const meta = h('div', { class: 'row' });
   root.append(h('section', { class: 'page' },
-    h('div', { class: 'hero' }, h('h1', null, 'Airport congestion'), h('span', { class: 'lede' }, 'Ranked by stress: the percentile of predicted airport-hour delay among training hours. Fill density shows severity.')),
+    h('div', { class: 'hero' }, h('h1', null, 'Airport congestion'), h('span', { class: 'lede' }, 'Ranked by stress: the percentile of predicted airport-hour delay among training hours. Bar colour shows the traffic: green free, yellow moderate, red heavy.')),
     h('div', { class: 'row', style: { marginBottom: '12px' } }, h('label', { class: 'fld' }, 'Filter', q), h('label', { class: 'row small', for: 'us' }, usOnly, 'US airports only: where the models are validated and FAA status exists. Untick to include world airports (lower confidence).'), meta),
+    trafficLegend(),
     h('div', { class: 'panel' }, body)));
 
   const draw = () => {
@@ -24,7 +25,7 @@ export default async function mount(root) {
         h('tbody', null, rows.slice(0, 80).map((a, i) => h('tr', null,
           h('td', { class: 'mono mute' }, i + 1),
           h('td', null, h('a', { href: `#/search?from=${a.iata}`, class: 'mono' }, a.iata), ' ', h('span', { class: 'mute' }, `${a.name}${a.country ? ` · ${a.country}` : ''}`)),
-          h('td', null, h('span', { class: 'row', style: { gap: '8px', flexWrap: 'nowrap' } }, h('span', { class: `sev h${level(a.stress)}`, title: 'severity fill' }), stressBar(a.stress), h('span', { class: 'mono' }, fmt(a.stress)))),
+          h('td', null, h('span', { class: 'row', style: { gap: '8px', flexWrap: 'nowrap' } }, stressBar(a.stress), h('span', { class: 'mono' }, fmt(a.stress)))),
           h('td', { class: 'r mono' }, `${fmt(a.pred_dep_delay_min, 1)} min`), h('td', { class: 'r mono' }, `${fmt(a.pred_nas_min, 1)} min`),
           h('td', { class: 'mono' }, a.weather_category),
           h('td', { class: 'mono' }, a.nas.status === 'normal' ? '–' : a.nas.status === 'not covered' ? h('span', { class: 'mute' }, 'n/a') : `${a.nas.status.replace('_', ' ')}${a.nas.delay_minutes ? ` ${a.nas.delay_minutes}m` : ''}`),

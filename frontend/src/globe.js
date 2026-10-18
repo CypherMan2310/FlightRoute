@@ -1,8 +1,9 @@
-// Black-and-white globe (globe.gl). Severity is shown by marker size, column height and pulsing rings, never by hue.
+// Black-and-white globe (globe.gl). Severity is shown by marker size, column height and pulsing rings; the only hue is the airport column colour
+// (green free, yellow moderate, red heavy traffic, see traffic() in ui.js).
 import Globe from 'globe.gl';
 import { feature } from 'topojson-client';
 import landTopo from 'world-atlas/land-110m.json';
-import { esc } from './ui.js';
+import { esc, traffic } from './ui.js';
 
 const LAND = feature(landTopo, landTopo.objects.land).features;
 
@@ -19,7 +20,7 @@ export function createGlobe(el, { onAirport, autoRotate = true, initial = { lat:
     .pointLat('lat').pointLng('lng')
     .pointAltitude((d) => d.alt)
     .pointRadius((d) => d.radius)
-    .pointColor((d) => (d.kind === 'aircraft' ? '#d0d0d0' : '#ffffff'))
+    .pointColor((d) => (d.kind === 'aircraft' ? '#d0d0d0' : traffic(d.row.stress).color))
     .pointResolution(8)
     .pointLabel((d) => `<div class="tip">${esc(d.label)}</div>`)
     .onPointClick((d) => { if (d.kind === 'airport' && onAirport) onAirport(d.row); })
@@ -57,7 +58,7 @@ export function createGlobe(el, { onAirport, autoRotate = true, initial = { lat:
       airportPoints = rows.map((r) => ({
         kind: 'airport', row: r, lat: r.lat, lng: r.lon,
         alt: 0.004 + (r.stress / 100) * 0.13, radius: 0.2 + (r.stress / 100) * 0.55,
-        label: `${r.iata} · ${r.name} · stress ${Math.round(r.stress)} · ~${r.pred_dep_delay_min} min`,
+        label: `${r.iata} · ${r.name} · stress ${Math.round(r.stress)} (${traffic(r.stress).label} traffic) · ~${r.pred_dep_delay_min} min`,
       }));
       refreshPoints();
       const ranked = [...rows].sort((a, b) => b.stress - a.stress);

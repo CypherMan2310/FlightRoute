@@ -77,7 +77,7 @@ button[disabled] { opacity: 0.45; cursor: progress; }
 .b-low { border-style: dashed; }
 .b-offline { border-style: dotted; }
 
-/* ---- severity: hatch density (empty -> solid) ---- */
+/* ---- severity: hatch density (empty -> solid); airport bars add the traffic colour (see traffic() in ui.js) ---- */
 .bar { position: relative; display: inline-block; vertical-align: middle; width: 96px; height: 12px; border: 1px solid var(--line2); background: var(--bg); overflow: hidden; }
 .bar > i { position: absolute; inset: 0 auto 0 0; display: block; border-right: 1px solid var(--fg); }
 .h0 { background: transparent; }
@@ -143,7 +143,8 @@ ul.adv li { padding-left: 14px; position: relative; } ul.adv li::before { conten
 .hud.collapsed > *:not(.hud-head) { display: none; }
 .mini { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 0.82rem; align-items: center; }
 .mini .bar { height: 9px; width: 90px; }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.78rem; color: var(--mute); }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 0.78rem; color: var(--mute); margin: 8px 0; }
+.legend b { color: var(--fg); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.72rem; }
 .globe-small { position: relative; height: 460px; border: 1px solid var(--line2); background: #000; }
 .globe-small .gl { position: absolute; inset: 0; }
 .tip { font-family: var(--mono); font-size: 12px; background: #000; color: #fff; border: 1px solid #fff; padding: 4px 7px; }

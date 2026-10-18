@@ -42,7 +42,21 @@ export const kindBadge = (k) => h('span', { class: 'badge b-kind' }, k);
 
 /** Severity level 0..4 from a 0..100 stress value (hatch density, never colour). */
 export const level = (v) => (v < 20 ? 0 : v < 40 ? 1 : v < 60 ? 2 : v < 80 ? 3 : 4);
-export const stressBar = (v) => h('span', { class: 'bar', title: `stress ${fmt(v, 0)} / 100` }, h('i', { class: `h${level(v)}`, style: { width: `${Math.max(2, Math.min(100, v))}%` } }));
+/** Airport traffic class from stress (0..100). Colour is used ONLY for the airport bars (globe columns and stress bars) and their legend:
+ *  green = free, yellow = moderate, red = heavy. The bar length, the number and the title text carry the same information for colour-blind readers. */
+export const TRAFFIC = [
+  { key: 'free', label: 'free', color: '#2ecc71', from: 0, range: 'stress under 40' },
+  { key: 'moderate', label: 'moderate', color: '#f1c40f', from: 40, range: 'stress 40 to 69' },
+  { key: 'heavy', label: 'heavy', color: '#ff453a', from: 70, range: 'stress 70 and over' },
+];
+export const traffic = (v) => (v >= TRAFFIC[2].from ? TRAFFIC[2] : v >= TRAFFIC[1].from ? TRAFFIC[1] : TRAFFIC[0]);
+export const stressBar = (v) => {
+  const t = traffic(v);
+  return h('span', { class: 'bar', title: `stress ${fmt(v, 0)} / 100 · ${t.label} traffic` }, h('i', { style: { width: `${Math.max(2, Math.min(100, v))}%`, background: t.color } }));
+};
+export const trafficLegend = () => h('div', { class: 'legend' },
+  h('b', null, 'Traffic'), TRAFFIC.map((t) => h('span', null, h('i', { class: 'sev', style: { background: t.color } }), `${t.label} (${t.range})`)),
+  h('span', null, 'column height and size = stress'));
 
 export function sourcesPanel(sources) {
   const rows = Object.entries(sources || {}).map(([name, s]) => h('tr', null, h('td', null, name.replace(/_/g, ' ')), h('td', null, badge(s.source, s)), h('td', { class: 'mute small' }, [s.provider, ago(s.age_s), s.fallback_reason && `fallback: ${s.fallback_reason}`, s.degraded && s.degraded.length && `reduced: no ${s.degraded.join(', ')}`].filter(Boolean).join(' · '))));

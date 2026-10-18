@@ -1,6 +1,6 @@
 # AEROGRID
 
-Predicts flight delay and its cause, and monitors airport congestion on a black-and-white live globe. A college project (AERO-SIT, Phase-I review), so every number says where it came from: each API payload carries `source` = live | cached | simulated, and each model card says `trained_on` = real | synthetic.
+Predicts flight delay and its cause, and monitors airport congestion on a black-and-white live globe whose airport bars are coloured by traffic (green free, yellow moderate, red heavy). A college project (AERO-SIT, Phase-I review), so every number says where it came from: each API payload carries `source` = live | cached | simulated, and each model card says `trained_on` = real | synthetic.
 
 Pages: Globe, Search (delay, 80% interval, cause breakdown, route and altitude advice), Congestion, What-if, Scorecard (the app's own accuracy against FAA NAS delay programs), Models (model cards, baselines, data freshness).
 
