@@ -1,4 +1,4 @@
-# One image = API + built frontend. Free hosts: Hugging Face Spaces (Docker SDK, port 7860) or Render.
+# One image = API + built frontend. Free host: Render (render.yaml; Hugging Face's Docker SDK is paid-only since 2026). Port 7860.
 # Runtime has no torch and no training stack: numpy, scipy, lightgbm, pandas, fastapi, uvicorn, httpx only (CLAUDE.md rule 3).
 
 # ---- stage 1: build the frontend ----------------------------------------------------------------------------------

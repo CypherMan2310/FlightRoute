@@ -1,0 +1,14 @@
+# Render Blueprint: one free Docker web service (API + built frontend). Free instances: 512 MB RAM, about 0.1 CPU, they spin
+# down after 15 minutes without traffic and take about a minute to wake. The image uses about 175 MB at runtime (checked
+# locally with docker --memory=512m --cpus=0.1). Optional secret EBIRD_API_KEY: add it in the Render dashboard, never here.
+services:
+  - type: web
+    name: aerogrid
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "7860"   # the Dockerfile's uvicorn listens on 7860; Render routes to $PORT

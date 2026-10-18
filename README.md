@@ -1,11 +1,3 @@
----
-title: AEROGRID
-sdk: docker
-app_port: 7860
-pinned: false
-short_description: Flight delay prediction and airport congestion globe
----
-
 # AEROGRID
 
 Predicts flight delay and its cause, and monitors airport congestion on a black-and-white live globe. A college project (AERO-SIT, Phase-I review), so every number says where it came from: each API payload carries `source` = live | cached | simulated, and each model card says `trained_on` = real | synthetic.
@@ -25,14 +17,13 @@ Tests: `cd backend && python -m pytest` (offline). Docker: `docker build -t aero
 
 Optional environment variables: `EBIRD_API_KEY` (otherwise bird abundance is simulated and labelled so), `OPENSKY_ENABLED` (off by default: its terms need a licence for a live service). Never commit keys.
 
-## Deploy (free, no card): Hugging Face Spaces
-1. Create a Space at huggingface.co/new-space: SDK **Docker**, hardware CPU basic (free), any name.
-2. Push this repository to it (the `README.md` front matter above is what Spaces reads):
-   ```bash
-   git remote add space https://huggingface.co/spaces/<user>/<space>
-   git push space main --force   # first push only: the new Space holds an auto-made README commit with unrelated history
-   ```
-   Git asks for credentials: username = your HF user, password = an HF access token with write access (huggingface.co/settings/tokens). Do not put the token in the remote URL.
-3. Optional: in the Space settings add the secret `EBIRD_API_KEY`; in this GitHub repository set the variable `AEROGRID_URL` to `https://<user>-<space>.hf.space` so `ingest.yml` keeps the app awake and archives the scorecard (a free Space's disk is ephemeral, so the scorecard database resets on restart).
+## Deploy (free): Render
+Hugging Face Spaces no longer offer Docker on free accounts (checked 2026-10-18: the Docker SDK shows "Paid"), so the free path is Render, which runs this repository's Dockerfile as a free web service. `render.yaml` is the blueprint.
+1. Sign in at render.com with GitHub and allow it to read this repository (private is fine).
+2. **New > Blueprint**, pick this repository and branch `main`, and apply. It creates one free Docker web service named `aerogrid` (it sets `PORT=7860`, matching the Dockerfile).
+3. Wait for the first build (about 5 to 10 minutes). The app is then at `https://aerogrid-<suffix>.onrender.com`; `/api/health` should show `"trained_on":"real"`.
+4. Optional: add `EBIRD_API_KEY` in the service's Environment tab; set the GitHub repository variable `AEROGRID_URL` to the service URL for `ingest.yml`.
+
+Free-tier limits: 512 MB RAM (the app uses about 175 MB), about 0.1 CPU, the service sleeps after 15 minutes without traffic and takes about a minute to wake, and its disk is ephemeral, so the scorecard database resets on every restart or wake. `ingest.yml` pings every 30 minutes, which does not keep a free instance awake (see TODO.md).
 
 Data and attribution: adsb.lol (ODbL 1.0), Open-Meteo.com (CC-BY 4.0), eBird.org, aviationweather.gov / NOAA, FAA NAS Status, BTS On-Time Performance, IEM ASOS.
