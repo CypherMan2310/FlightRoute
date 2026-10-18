@@ -47,6 +47,7 @@ DATA_SOURCES = [
     {"name": "Open-Meteo", "role": "hourly forecast, jet-level wind", "ttl_s": openmeteo.TTL_S, "license": "CC-BY 4.0, free non-commercial tier (attribute Open-Meteo.com)", "key": "forecast"},
     {"name": "MET Norway", "role": "forecast fallback when Open-Meteo is unavailable (no gusts, visibility, CAPE or jet wind)", "ttl_s": metno.TTL_S, "license": "CC BY 4.0, free, no key (credit MET Norway)", "key": "forecast_fallback"},
     {"name": "adsb.lol", "role": "live ADS-B positions", "ttl_s": adsb.TTL_S, "license": "ODbL 1.0", "key": "flights"},
+    {"name": "adsb.fi", "role": "ADS-B fallback when adsb.lol is unavailable or rate-limited", "ttl_s": adsb.TTL_S, "license": "personal non-commercial use only; cite adsb.fi and link adsb.fi; 1 request/s", "key": "flights_fallback"},
     {"name": "FAA NAS Status", "role": "US airport delay programmes (scorecard ground truth)", "ttl_s": nas.TTL_S, "license": "US Government data", "key": "nas"},
     {"name": "eBird", "role": "bird abundance (optional key)", "ttl_s": ebird.TTL_S, "license": "eBird API terms: non-commercial, attribute eBird.org", "key": "ebird"},
     {"name": "OpenSky", "role": "ADS-B fallback", "ttl_s": adsb.TTL_S, "license": "disabled by default: REST API use in a live service needs a written licence", "key": "opensky"},
@@ -58,8 +59,8 @@ def _r(x, nd=2):
 
 
 def _badge(payload: dict, **extra) -> dict:
-    degraded = {"degraded": payload["degraded"], "attribution": payload.get("attribution")} if payload.get("degraded") else {}
-    return {"source": payload["source"], "age_s": _r(payload.get("age_s"), 1), "fallback_reason": payload.get("fallback_reason"), "provider": payload.get("provider"), **degraded, **extra}
+    meta = {k: payload[k] for k in ("degraded", "attribution") if payload.get(k)}
+    return {"source": payload["source"], "age_s": _r(payload.get("age_s"), 1), "fallback_reason": payload.get("fallback_reason"), "provider": payload.get("provider"), **meta, **extra}
 
 
 class Sources:
@@ -97,7 +98,10 @@ class Sources:
         return self._note("nas", nas.get_status(client=self.client, cache=self.cache))
 
     def flights(self, lat, lon, radius) -> dict:
-        return self._note("flights", adsb.get_flights(lat, lon, radius, client=self.client, cache=self.cache, env=self.env))
+        payload = adsb.get_flights(lat, lon, radius, client=self.client, cache=self.cache, env=self.env)
+        if payload.get("provider") == "adsb.fi":
+            self._note("flights_fallback", payload)
+        return self._note("flights", payload)
 
     def ebird(self, lat, lng) -> dict:
         return self._note("ebird", ebird.get_recent_observations(lat, lng, client=self.client, cache=self.cache, env=self.env))
@@ -153,7 +157,9 @@ class FlightFeed:
                     flights.append(fl)
         if len(flights) > cap:
             flights = flights[:: math.ceil(len(flights) / cap)]
-        return {"source": combine_sources(p["source"] for p in parts), "provider": "adsb.lol", "fetched_at": min(p["fetched_at"] for p in parts),
+        real = sorted({p["provider"] for p in parts if p["source"] != "simulated"})  # what the aircraft really came from, not a fixed name
+        return {"source": combine_sources(p["source"] for p in parts), "provider": " + ".join(real) or "simulated", "attribution": adsb.ADSBFI_ATTRIBUTION if "adsb.fi" in real else None,
+                "fetched_at": min(p["fetched_at"] for p in parts),
                 "age_s": max(p["age_s"] for p in parts), "fallback_reason": next((p["fallback_reason"] for p in parts if p["fallback_reason"]), None),
                 "regions": len(parts), "count": len(flights), "flights": flights}
 

@@ -63,7 +63,7 @@ export default async function mount(root) {
       put(left, 
         h('h2', { style: { marginTop: '14px' } }, 'Aircraft'),
         h('div', { class: 'row', style: { margin: '6px 0' } }, badge(flights.source, flights), h('span', { class: 'mono' }, `${flights.count} shown`, flights.regions ? ` · ${flights.regions} regions` : '')),
-        h('p', { class: 'small' }, flights.source === 'simulated' ? 'Live ADS-B is unavailable: these aircraft are SIMULATED on a modelled route network, not real traffic.' : `Positions from ${flights.provider}${flights.age_s ? `, ${ago(flights.age_s)}` : ''}.`),
+        h('p', { class: 'small' }, flights.source === 'simulated' ? 'Live ADS-B is unavailable: these aircraft are SIMULATED on a modelled route network, not real traffic.' : ['Positions from ', flights.provider, String(flights.provider).includes('adsb.fi') ? [' (', h('a', { href: 'https://adsb.fi', rel: 'noopener' }, 'adsb.fi'), ', personal non-commercial use)'] : null, flights.age_s ? `, ${ago(flights.age_s)}` : '', '.']),
       );
     }
     if (cong && cong.trained_on === 'synthetic') put(left, h('div', { class: 'notice warn', style: { marginTop: '12px' } }, h('b', null, 'Demo models'), 'Stress comes from models trained on SYNTHETIC data.'));

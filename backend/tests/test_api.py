@@ -75,6 +75,21 @@ def om_429_metno_up(clock):
 @pytest.fixture(autouse=True)
 def no_throttle(monkeypatch):
     monkeypatch.setattr("aerogrid.sources.metno.MIN_INTERVAL_S", 0.0)
+    monkeypatch.setattr("aerogrid.sources.adsb.FI_MIN_INTERVAL_S", 0.0)
+
+
+def lol_429_fi_up(clock):
+    """adsb.lol answers 429 (what Render's shared IP got); adsb.fi serves the recorded answer."""
+    base = all_up(clock)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "api.adsb.lol":
+            return httpx.Response(429)
+        if request.url.host == "opendata.adsb.fi":
+            return httpx.Response(200, json=fixture_json("adsbfi_point.json"))
+        return base(request)
+
+    return handler
 
 
 def make_client(models_dir, tmp_path, handler=all_down, clock=None, models=True, **kw):
@@ -135,6 +150,27 @@ def test_flights_live_path_uses_adsb_lol(up):
     client, _, _ = up
     j = client.get("/api/flights", params={"lat": 40.64, "lon": -73.78}).json()
     assert j["source"] == "live" and j["provider"] == "adsb.lol" and j["count"] == 7
+
+
+def test_flights_fall_back_to_adsb_fi_with_attribution_and_the_reason(models_dir, tmp_path):
+    clock = FakeClock()
+    client, _, _ = make_client(models_dir, tmp_path, handler=lol_429_fi_up(clock), clock=clock)
+    j = client.get("/api/flights", params={"lat": 40.64, "lon": -73.78}).json()
+    assert (j["source"], j["provider"], j["fallback_reason"], j["count"]) == ("live", "adsb.fi", "adsb.lol:http_429", 7)
+    assert "adsb.fi" in j["attribution"]
+    g = client.get("/api/flights").json()
+    assert g["source"] == "live" and g["provider"] == "adsb.fi" and "adsb.fi" in g["attribution"] and g["count"] > 0
+    rows = {s["name"]: s for s in client.get("/api/models").json()["data_sources"]}
+    assert rows["adsb.fi"]["last"]["provider"] == "adsb.fi" and "adsb.fi" in rows["adsb.fi"]["last"]["attribution"]
+    assert "non-commercial" in rows["adsb.fi"]["license"]
+
+
+def test_global_feed_names_the_providers_it_really_used(up, down):
+    live, _, _ = up
+    assert live.get("/api/flights").json()["provider"] == "adsb.lol"
+    sim, _, _ = down
+    j = sim.get("/api/flights").json()
+    assert j["source"] == "simulated" and j["provider"] == "simulated" and j["attribution"] is None
 
 
 def test_global_flights_merge_regions_and_report_the_least_real_source(down):

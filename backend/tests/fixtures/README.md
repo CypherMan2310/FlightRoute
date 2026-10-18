@@ -11,6 +11,7 @@ Recorded on 2026-10-17 from the live free endpoints (small queries, user agent `
 | `openmeteo_hist_two_points.json` | historical-forecast-api.open-meteo.com `/v1/forecast` (2 points, 2026-05-01, knots) | verbatim |
 | `metno_complete_ord.json` | api.met.no `/weatherapi/locationforecast/2.0/complete?lat=41.98&lon=-87.90` (recorded 2026-10-18) | trimmed to 5 hourly steps plus the first 6-hourly step (which has no `next_1_hours`); needs a descriptive User-Agent |
 | `adsblol_point.json` | api.adsb.lol `/v2/point/40.64/-73.78/50` | trimmed to 7 of 32 aircraft |
+| `adsbfi_point.json` | opendata.adsb.fi `/api/v3/lat/40.64/lon/-73.78/dist/250` (recorded 2026-10-18) | trimmed to 7 of 44 aircraft; same fields as adsb.lol |
 | `opensky_states.json` | opensky-network.org `/api/states/all` (anonymous, NYC box) | verbatim |
 | `bts_sample.csv` | BTS On-Time Performance, May 2026 (the 17 columns we read) | 11 real rows picked to cover late / on-time / cancelled / diverted, Alaska, Hawaii, Phoenix |
 | `iem_atl_sample.csv` | IEM ASOS `asos.py?station=ATL` (May 2026) | 9 real report lines: thunderstorm, vertical visibility, gust, clear |

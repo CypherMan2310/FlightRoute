@@ -26,4 +26,4 @@ Hugging Face Spaces no longer offer Docker on free accounts (checked 2026-10-18:
 
 Free-tier limits: 512 MB RAM (the app uses about 175 MB), about 0.1 CPU, the service sleeps after 15 minutes without traffic and takes about a minute to wake, and its disk is ephemeral, so the scorecard database resets on every restart or wake. `ingest.yml` pings every 30 minutes, which does not keep a free instance awake (see TODO.md).
 
-Data and attribution: adsb.lol (ODbL 1.0), Open-Meteo.com (CC-BY 4.0), eBird.org, aviationweather.gov / NOAA, FAA NAS Status, BTS On-Time Performance, IEM ASOS.
+Data and attribution: adsb.lol (ODbL 1.0), adsb.fi (fallback, personal non-commercial use), MET Norway (CC BY 4.0, forecast fallback), Open-Meteo.com (CC-BY 4.0), eBird.org, aviationweather.gov / NOAA, FAA NAS Status, BTS On-Time Performance, IEM ASOS.
