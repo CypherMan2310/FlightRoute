@@ -30,3 +30,4 @@
 - 2026-10-17 P2: train_all.py: per-fold prior refit, `vs_baseline` paired RMSE ratios, extra baselines (origin_mean, lgbm_no_hist_prior), `oof` evidence for congestion/weather/carrier, `graph_helps` now follows the RMSE rule; Models page shows the ratios.
 - 2026-10-17 P2: tried and not adopted (below the 0.3% bar): weather hurdle/Tweedie/regularised L2/airport prior, carrier shrinkage and month level; bird weight 0 verified as genuine. Bundle in backend/models retrained from the cached 4-month data (same window).
 - 2026-10-18 P6: `docker build` and `docker run` verified locally (610 MB image, healthy, predict and UI answer, non-root, no torch); README.md added with Hugging Face Spaces front matter and deploy steps; repository initialised and pushed to github.com/CypherMan2310/FlightRoute (main).
+- 2026-10-18 P6: pushed main to the Hugging Face Space CypherMan2310/AreoGrid (remote `space`, forced over the template commit); build status not checked (private Space).
