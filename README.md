@@ -3,7 +3,7 @@ title: AEROGRID
 sdk: docker
 app_port: 7860
 pinned: false
-short_description: Flight delay prediction and airport congestion on a live globe
+short_description: Flight delay prediction and airport congestion globe
 ---
 
 # AEROGRID
@@ -30,8 +30,9 @@ Optional environment variables: `EBIRD_API_KEY` (otherwise bird abundance is sim
 2. Push this repository to it (the `README.md` front matter above is what Spaces reads):
    ```bash
    git remote add space https://huggingface.co/spaces/<user>/<space>
-   git push space main      # username = your HF user, password = an HF access token with write access
+   git push space main --force   # first push only: the new Space holds an auto-made README commit with unrelated history
    ```
+   Git asks for credentials: username = your HF user, password = an HF access token with write access (huggingface.co/settings/tokens). Do not put the token in the remote URL.
 3. Optional: in the Space settings add the secret `EBIRD_API_KEY`; in this GitHub repository set the variable `AEROGRID_URL` to `https://<user>-<space>.hf.space` so `ingest.yml` keeps the app awake and archives the scorecard (a free Space's disk is ephemeral, so the scorecard database resets on restart).
 
 Data and attribution: adsb.lol (ODbL 1.0), Open-Meteo.com (CC-BY 4.0), eBird.org, aviationweather.gov / NOAA, FAA NAS Status, BTS On-Time Performance, IEM ASOS.
