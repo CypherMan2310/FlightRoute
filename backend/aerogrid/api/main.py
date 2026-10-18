@@ -28,7 +28,7 @@ from ..ml import bird, explain, routing, whatif
 from ..ml import congestion as cg
 from ..ml import ensemble as en
 from ..ml import weather as wx
-from ..sources import adsb, ebird, metar, nas, openmeteo
+from ..sources import adsb, ebird, metar, metno, nas, openmeteo
 from ..sources.cache import TTLCache, combine_sources, default_cache
 from .schemas import PredictRequest, WhatIfRequest
 from .scorecard import Scorecard
@@ -45,6 +45,7 @@ FEED_HUBS = ["JFK", "ATL", "ORD", "DFW", "LAX", "LHR", "FRA", "DXB", "DEL", "HND
 DATA_SOURCES = [
     {"name": "aviationweather.gov", "role": "METAR / TAF observations", "ttl_s": metar.TTL_S, "license": "US Government work (NOAA / NWS)", "key": "metar"},
     {"name": "Open-Meteo", "role": "hourly forecast, jet-level wind", "ttl_s": openmeteo.TTL_S, "license": "CC-BY 4.0, free non-commercial tier (attribute Open-Meteo.com)", "key": "forecast"},
+    {"name": "MET Norway", "role": "forecast fallback when Open-Meteo is unavailable (no gusts, visibility, CAPE or jet wind)", "ttl_s": metno.TTL_S, "license": "CC BY 4.0, free, no key (credit MET Norway)", "key": "forecast_fallback"},
     {"name": "adsb.lol", "role": "live ADS-B positions", "ttl_s": adsb.TTL_S, "license": "ODbL 1.0", "key": "flights"},
     {"name": "FAA NAS Status", "role": "US airport delay programmes (scorecard ground truth)", "ttl_s": nas.TTL_S, "license": "US Government data", "key": "nas"},
     {"name": "eBird", "role": "bird abundance (optional key)", "ttl_s": ebird.TTL_S, "license": "eBird API terms: non-commercial, attribute eBird.org", "key": "ebird"},
@@ -57,7 +58,8 @@ def _r(x, nd=2):
 
 
 def _badge(payload: dict, **extra) -> dict:
-    return {"source": payload["source"], "age_s": _r(payload.get("age_s"), 1), "fallback_reason": payload.get("fallback_reason"), "provider": payload.get("provider"), **extra}
+    degraded = {"degraded": payload["degraded"], "attribution": payload.get("attribution")} if payload.get("degraded") else {}
+    return {"source": payload["source"], "age_s": _r(payload.get("age_s"), 1), "fallback_reason": payload.get("fallback_reason"), "provider": payload.get("provider"), **degraded, **extra}
 
 
 class Sources:
@@ -84,7 +86,12 @@ class Sources:
         return self._note("taf", metar.get_taf(icaos, client=self.client, cache=self.cache))
 
     def forecast(self, points, hours: int = FORECAST_HOURS) -> dict:
-        return self._note("forecast", openmeteo.get_forecast(points, hours=hours, client=self.client, cache=self.cache))
+        """Open-Meteo first; points it could not serve (429, budget, outage) and has no cache for go to MET Norway before being simulated."""
+        payload = metno.fill_simulated(openmeteo.get_forecast(points, hours=hours, client=self.client, cache=self.cache), points, hours,
+                                       client=self.client, cache=self.cache, env=self.env)
+        if payload.get("degraded"):
+            self._note("forecast_fallback", payload)
+        return self._note("forecast", payload)
 
     def nas(self) -> dict:
         return self._note("nas", nas.get_status(client=self.client, cache=self.cache))
@@ -218,7 +225,7 @@ def create_app(models_dir=None, db_path=None, sources: Sources | None = None, st
         if bundle is not None:
             target = float(math.floor(now / 3600) * 3600 + 2 * 3600)
             snap, _, info = world.snapshot(target, now)
-            if info["metar"]["source"] != "simulated" and info["forecast"]["source"] != "simulated":  # never score the app on simulated inputs
+            if info["metar"]["source"] != "simulated" and info["forecast"]["source"] != "simulated" and not info["forecast"].get("degraded"):  # never score the app on simulated or degraded inputs
                 score = bundle.score_world(bundle.world_frame(snap))
                 idx = {c: i for i, c in enumerate(score["codes"])}
                 at_issue = nas_payload["source"] == "live"
@@ -369,11 +376,13 @@ def create_app(models_dir=None, db_path=None, sources: Sources | None = None, st
         br = bird_pair(o, d, dep_ts, arr_ts)
         nas_payload = sources.nas()
         zone_info = b.ensemble.breakdown(out["components"].iloc[0], row.loc[0, "o_zone"])
+        reduced = sorted(set(info["forecast"].get("degraded", [])) | set(_badge(ef).get("degraded", [])))
         drivers = {
             "weather": [{**x, "value": _r(x["value"]), "contribution_min": _r(x["contribution_min"])} for x in explain.lgbm_drivers(b.weather, out["flight_features"], 3)[0]],
             "congestion": [{**x, "value": _r(x["value"]), "contribution_min": _r(x["contribution_min"])} for x in explain.lgbm_drivers(b.congestion.gbm, score["features"].iloc[[oi]], 3)[0]],
             "cascade": [{**x, "value": _r(x["value"]), "contribution_min": _r(x["contribution_min"])} for x in explain.gcn_drivers(b.gcn, en.world_operator(), score["features"][cg.GCN_FEATURES].to_numpy(dtype=float), oi, 1, cg.GCN_FEATURES, 3)],
-            "route": [{"label": "jet-stream wind along the route", "contribution_min": _r(wind["delta_min"]), "note": "negative = tailwind saves time; only headwind counts as delay"}],
+            "route": [{"label": "jet-stream wind along the route", "contribution_min": _r(wind["delta_min"]),
+                       "note": "jet-level wind is unavailable from the fallback forecast: shown as 0" if "wind250" in reduced else "negative = tailwind saves time; only headwind counts as delay"}],
             "bird": [{"label": f"season, local solar time and flyway ({br['origin']['flyway']})", "value": br["index"], "note": bird.LABEL}],
             "carrier": [{"label": (lambda e: f"historical mean for {req.airline or 'all carriers'} ({e['level']}, n={e['n']})")(b.carrier.explain(req.airline or "UNK", o.iata, dep_ts)),
                          "contribution_min": _r(b.carrier.explain(req.airline or "UNK", o.iata, dep_ts)["mean_min"])}],
@@ -388,6 +397,9 @@ def create_app(models_dir=None, db_path=None, sources: Sources | None = None, st
             notes.append(f"Few training rows in the {row.loc[0, 'o_zone']} weather zone: pooled ensemble weights were used.")
         if any(s["source"] == "simulated" for s in (info["metar"], info["forecast"])):
             notes.append("Some weather inputs are simulated because the upstream was unavailable: see sources.")
+        if reduced:
+            notes.append("Open-Meteo was unavailable, so part of the forecast comes from MET Norway, which has no wind gusts, visibility, CAPE or jet-level wind. "
+                         f"Those inputs ({', '.join(reduced)}) are neutral stand-ins, so the weather and route parts are less reliable.")
         card_models = b.card["models"]
         return {
             "origin": o.iata, "destination": d.iata, "airline": req.airline, "departure_time": datetime.fromtimestamp(dep_ts, tz=timezone.utc).isoformat(timespec="minutes"),
@@ -397,7 +409,7 @@ def create_app(models_dir=None, db_path=None, sources: Sources | None = None, st
             "advice": advice_lines(o, d, plan, wind, br), "nas": {"origin": nas_for(nas_payload, o), "destination": nas_for(nas_payload, d)},
             "sources": {**info, "enroute_forecast": _badge(ef), "nas": _badge(nas_payload), "ebird": br["ebird"]},
             "models": {k: {"kind": v["kind"], "trained_on": v["trained_on"], **({"label": v["label"]} if "label" in v else {})} for k, v in card_models.items()},
-            "confidence": {"level": "normal" if us_pair else "low", "notes": notes, "interval": "80% split-conformal (calibrated on a held-out block)"},
+            "confidence": {"level": "normal" if us_pair and not reduced else "low", "notes": notes, "interval": "80% split-conformal (calibrated on a held-out block)"},
             "trained_on": b.trained_on,
         }
 
@@ -419,8 +431,11 @@ def create_app(models_dir=None, db_path=None, sources: Sources | None = None, st
         wind = routing.wind_extra_minutes(o.lat, o.lon, d.lat, d.lon, [(h["wind250_kt"], h["wind250_dir_deg"]) for h in hours])
         plan = routing.plan_route(o.iata, d.iata, aircraft)
         br = bird_pair(o, d, dep_ts, arr_ts)
+        advice = advice_lines(o, d, plan, wind, br)
+        if "wind250" in ef.get("degraded", []):
+            advice.append("Jet-level wind is unavailable (forecast fallback: MET Norway), so wind effects on this route are not included.")
         return {"route": plan, "wind": {k: _r(v) for k, v in wind.items()}, "bird": {"index": br["index"], "origin": br["origin"], "destination": br["destination"], "label": bird.LABEL},
-                "advice": advice_lines(o, d, plan, wind, br), "sources": {"enroute_forecast": _badge(ef), "ebird": br["ebird"]}, "departure_time": datetime.fromtimestamp(dep_ts, tz=timezone.utc).isoformat(timespec="minutes")}
+                "advice": advice, "sources": {"enroute_forecast": _badge(ef), "ebird": br["ebird"]}, "departure_time": datetime.fromtimestamp(dep_ts, tz=timezone.utc).isoformat(timespec="minutes")}
 
     @app.post("/api/whatif")
     def whatif_endpoint(req: WhatIfRequest):
@@ -436,7 +451,7 @@ def create_app(models_dir=None, db_path=None, sources: Sources | None = None, st
     @app.get("/api/scorecard")
     def scorecard_endpoint():
         return {**scorecard.metrics(clock()), "trained_on": bundle.trained_on if bundle else None, "scored_airports": len(us_airports), "model_horizon_h": 2,
-                "note": "Predictions are logged only when METAR and forecast inputs are real (live or cached) and are resolved only against live FAA data."}
+                "note": "Predictions are logged only when METAR and forecast inputs are real (live or cached) and complete (not the reduced MET Norway fallback), and are resolved only against live FAA data."}
 
     @app.get("/api/stream")
     async def stream(max_events: int | None = Query(None, ge=1), interval_s: float = Query(FEED_S, ge=0, le=120)):

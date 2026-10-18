@@ -15,7 +15,7 @@ AEROGRID_BACKGROUND=1 python -m uvicorn aerogrid.api.main:app --port 7860   # AP
 ```
 Tests: `cd backend && python -m pytest` (offline). Docker: `docker build -t aerogrid . && docker run -p 7860:7860 aerogrid` (one image, API + built frontend, runtime has no torch).
 
-Optional environment variables: `EBIRD_API_KEY` (otherwise bird abundance is simulated and labelled so), `OPENSKY_ENABLED` (off by default: its terms need a licence for a live service). Never commit keys.
+Optional environment variables: `EBIRD_API_KEY` (otherwise bird abundance is simulated and labelled so), `AEROGRID_CONTACT` (contact string sent to MET Norway, the forecast fallback when Open-Meteo is rate-limited; default the repository URL), `OPENSKY_ENABLED` (off by default: its terms need a licence for a live service). Never commit keys.
 
 ## Deploy (free): Render
 Hugging Face Spaces no longer offer Docker on free accounts (checked 2026-10-18: the Docker SDK shows "Paid"), so the free path is Render, which runs this repository's Dockerfile as a free web service. `render.yaml` is the blueprint.

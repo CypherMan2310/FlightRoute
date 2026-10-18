@@ -22,7 +22,7 @@ const foot = h(
   h('div', null, 'Free data only. Every figure carries its provenance: LIVE, CACHED or SIMULATED, and the model that produced it.'),
   h('ul', null,
     h('li', null, 'Flights: ', h('a', { href: 'https://adsb.lol', rel: 'noopener' }, 'adsb.lol'), ' (ODbL 1.0)'),
-    h('li', null, 'Weather: ', h('a', { href: 'https://aviationweather.gov', rel: 'noopener' }, 'aviationweather.gov'), ' (NOAA/NWS), ', h('a', { href: 'https://open-meteo.com', rel: 'noopener' }, 'Open-Meteo.com'), ' (CC BY 4.0)'),
+    h('li', null, 'Weather: ', h('a', { href: 'https://aviationweather.gov', rel: 'noopener' }, 'aviationweather.gov'), ' (NOAA/NWS), ', h('a', { href: 'https://open-meteo.com', rel: 'noopener' }, 'Open-Meteo.com'), ' (CC BY 4.0), ', h('a', { href: 'https://api.met.no', rel: 'noopener' }, 'MET Norway'), ' (CC BY 4.0, forecast fallback)'),
     h('li', null, 'Delay programmes: ', h('a', { href: 'https://nasstatus.faa.gov', rel: 'noopener' }, 'FAA NAS Status')),
     h('li', null, 'Birds: ', h('a', { href: 'https://ebird.org', rel: 'noopener' }, 'eBird.org'), ' (when a key is configured)'),
     h('li', null, 'Training data: US BTS On-Time Performance, IEM ASOS')),

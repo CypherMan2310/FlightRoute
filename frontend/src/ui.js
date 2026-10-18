@@ -34,7 +34,7 @@ export function ago(sec) {
 const SYMBOL = { live: '●', cached: '◐', simulated: '◌' };
 /** Provenance badge: LIVE (solid) / CACHED (ruled) / SIMULATED (dashed + hatch). */
 export function badge(source, info = {}) {
-  const parts = [info.provider, ago(info.age_s), info.fallback_reason && `fallback: ${info.fallback_reason}`].filter(Boolean);
+  const parts = [info.provider, ago(info.age_s), info.fallback_reason && `fallback: ${info.fallback_reason}`, info.degraded && info.degraded.length && `reduced: no ${info.degraded.join(', ')}`].filter(Boolean);
   return h('span', { class: `badge b-${source}`, title: parts.join(' · ') || source }, SYMBOL[source] || '?', ' ', String(source).toUpperCase());
 }
 export const trainedBadge = (t) => h('span', { class: `badge b-${t === 'real' ? 'real' : 'synthetic'}`, title: t === 'real' ? 'Trained on real flight data' : 'Trained on SYNTHETIC data: demonstration only' }, t === 'real' ? 'trained on real data' : t === 'synthetic' ? 'trained on SYNTHETIC data' : 'not trained');
@@ -45,7 +45,7 @@ export const level = (v) => (v < 20 ? 0 : v < 40 ? 1 : v < 60 ? 2 : v < 80 ? 3 :
 export const stressBar = (v) => h('span', { class: 'bar', title: `stress ${fmt(v, 0)} / 100` }, h('i', { class: `h${level(v)}`, style: { width: `${Math.max(2, Math.min(100, v))}%` } }));
 
 export function sourcesPanel(sources) {
-  const rows = Object.entries(sources || {}).map(([name, s]) => h('tr', null, h('td', null, name.replace(/_/g, ' ')), h('td', null, badge(s.source, s)), h('td', { class: 'mute small' }, [ago(s.age_s), s.fallback_reason && `fallback: ${s.fallback_reason}`].filter(Boolean).join(' · '))));
+  const rows = Object.entries(sources || {}).map(([name, s]) => h('tr', null, h('td', null, name.replace(/_/g, ' ')), h('td', null, badge(s.source, s)), h('td', { class: 'mute small' }, [s.provider, ago(s.age_s), s.fallback_reason && `fallback: ${s.fallback_reason}`, s.degraded && s.degraded.length && `reduced: no ${s.degraded.join(', ')}`].filter(Boolean).join(' · '))));
   return h('div', { class: 'tscroll' }, h('table', { class: 'tbl' }, h('tbody', null, rows)));
 }
 

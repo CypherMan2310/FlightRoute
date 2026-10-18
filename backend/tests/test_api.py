@@ -58,6 +58,25 @@ def all_up(clock):
     return handler
 
 
+def om_429_metno_up(clock):
+    """Every upstream is up except Open-Meteo, which answers 429 (what Render's shared IP got); MET Norway serves the recorded answer."""
+    base = all_up(clock)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "api.open-meteo.com":
+            return httpx.Response(429)
+        if request.url.host == "api.met.no":
+            return httpx.Response(200, json=fixture_json("metno_complete_ord.json"))
+        return base(request)
+
+    return handler
+
+
+@pytest.fixture(autouse=True)
+def no_throttle(monkeypatch):
+    monkeypatch.setattr("aerogrid.sources.metno.MIN_INTERVAL_S", 0.0)
+
+
 def make_client(models_dir, tmp_path, handler=all_down, clock=None, models=True, **kw):
     clock = clock or FakeClock()
     sources = Sources(client=mock_client(handler(clock) if handler is all_up else handler), cache=TTLCache(clock=clock), env={})
@@ -174,6 +193,40 @@ def test_predict_live_sources_and_nas_status_shown_beside_the_prediction(up):
     j = predict(client, origin="BWI", destination="ATL", airline="DL").json()
     assert j["sources"]["metar"]["source"] == "live" and j["sources"]["forecast"]["source"] == "live" and j["sources"]["nas"]["source"] == "live"
     assert j["nas"]["origin"]["status"] == "delay" and j["nas"]["origin"]["delay_minutes"] == 90 and j["nas"]["destination"]["status"] == "normal"
+
+
+def test_predict_falls_back_to_met_norway_and_says_what_that_costs(models_dir, tmp_path):
+    clock = FakeClock()
+    client, _, _ = make_client(models_dir, tmp_path, handler=om_429_metno_up(clock), clock=clock)
+    j = predict(client, origin="BWI", destination="ATL", airline="DL").json()
+    f, e = j["sources"]["forecast"], j["sources"]["enroute_forecast"]
+    assert (f["source"], f["provider"], f["fallback_reason"]) == ("live", "api.met.no", "http_429") and e["provider"] == "api.met.no"
+    assert set(f["degraded"]) == {"gust_kt", "visibility_m", "cape_jkg", "wind250"} and "MET Norway" in f["attribution"]
+    assert j["sources"]["metar"]["source"] == "live" and j["delay_min"] is not None
+    assert j["confidence"]["level"] == "low" and any("MET Norway" in n and "gust" in n for n in j["confidence"]["notes"])
+    assert "unavailable" in j["drivers"]["route"][0]["note"]
+
+
+def test_advisor_says_when_jet_level_wind_is_missing(models_dir, tmp_path):
+    clock = FakeClock()
+    client, _, _ = make_client(models_dir, tmp_path, handler=om_429_metno_up(clock), clock=clock)
+    j = client.get("/api/advisor", params={"origin": "JFK", "destination": "LAX"}).json()
+    assert j["sources"]["enroute_forecast"]["provider"] == "api.met.no" and any("Jet-level wind is unavailable" in a for a in j["advice"])
+
+
+def test_models_lists_met_norway_as_the_forecast_fallback_and_shows_when_it_was_used(models_dir, tmp_path):
+    clock = FakeClock()
+    client, _, _ = make_client(models_dir, tmp_path, handler=om_429_metno_up(clock), clock=clock)
+    predict(client, origin="BWI", destination="ATL", airline="DL")
+    rows = {s["name"]: s for s in client.get("/api/models").json()["data_sources"]}
+    assert rows["MET Norway"]["last"]["provider"] == "api.met.no" and rows["MET Norway"]["last"]["degraded"]
+    assert rows["Open-Meteo"]["last"]["provider"] == "api.met.no", "the forecast row reports what the models actually received"
+
+
+def test_tick_does_not_score_the_app_on_the_reduced_met_norway_forecast(models_dir, tmp_path):
+    clock = FakeClock()
+    _, app, _ = make_client(models_dir, tmp_path, handler=om_429_metno_up(clock), clock=clock)
+    assert app.state.tick()["logged"] == 0
 
 
 def test_outside_the_us_confidence_is_low(down):
